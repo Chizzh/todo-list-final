@@ -1,0 +1,133 @@
+package db
+
+import (
+	"fmt"
+)
+
+type Task struct {
+	ID      string `json:"id"`
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
+}
+
+func AddTask(task *Task) (int64, error) {
+	var id int64
+	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
+	res, err := db.Exec(query, task.Date, task.Title, task.Comment, task.Repeat)
+	if err == nil {
+		id, err = res.LastInsertId()
+	}
+	return id, err
+}
+
+func Tasks(limit int) ([]*Task, error) {
+	query := `
+		SELECT id, date, title, comment, repeat
+		FROM scheduler
+		ORDER BY date
+		LIMIT ?
+	`
+
+	rows, err := db.Query(query, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []*Task
+
+	for rows.Next() {
+		t := &Task{}
+		err := rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, t)
+	}
+
+	return tasks, nil
+}
+
+func GetTask(id string) (*Task, error) {
+	t := &Task{}
+
+	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
+	err := db.QueryRow(query, id).Scan(
+		&t.ID,
+		&t.Date,
+		&t.Title,
+		&t.Comment,
+		&t.Repeat,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("task not found")
+	}
+
+	return t, nil
+}
+
+func UpdateTask(task *Task) error {
+	query := `
+		UPDATE scheduler
+		SET date = ?, title = ?, comment = ?, repeat = ?
+		WHERE id = ?
+	`
+
+	res, err := db.Exec(
+		query,
+		task.Date,
+		task.Title,
+		task.Comment,
+		task.Repeat,
+		task.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("task not found")
+	}
+
+	return nil
+}
+
+func DeleteTask(id string) error {
+	res, err := db.Exec(`DELETE FROM scheduler WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("task not found")
+	}
+	return nil
+}
+
+func UpdateDate(date string, id string) error {
+	res, err := db.Exec(
+		`UPDATE scheduler SET date = ? WHERE id = ?`,
+		date,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("task not found")
+	}
+	return nil
+}
