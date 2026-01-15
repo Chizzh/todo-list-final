@@ -14,11 +14,13 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := db.GetTask(id)
+	if err != nil {
 		if err.Error() == "task not found" {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 		} else {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
-
+		return
+	}
 	writeJSON(w, http.StatusOK, task)
 }
