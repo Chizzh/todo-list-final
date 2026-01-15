@@ -14,9 +14,10 @@ func main() {
 	if err := db.Init("scheduler.db"); err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	// Start server
 	if err := server.Run("7540"); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

@@ -72,6 +72,11 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 }
 
 func nextDateHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	
 	nowStr := r.FormValue("now")
 	date := r.FormValue("date")
 	repeat := r.FormValue("repeat")
@@ -95,5 +100,9 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(res))
+	w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write([]byte(res)); err != nil {
+		return
+	}
 }

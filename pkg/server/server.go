@@ -10,10 +10,9 @@ import (
 
 func Run(port string) error {
     api.Init()
-
-    fs := http.FileServer(http.Dir("web"))
-	http.Handle("/", fs)
+ 
+	http.Handle("/", http.FileServer(http.Dir("web")))
     
-    log.Printf("Server starting on :%s", port)
+    log.Printf("Server started on http://localhost:%s\n", port)
     return http.ListenAndServe(":"+port, nil)
 }

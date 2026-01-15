@@ -18,8 +18,9 @@ type jsonID struct {
 	ID string `json:"id"`
 }
 
-func writeJSON(w http.ResponseWriter, data any) {
+func writeJSON(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
@@ -27,27 +28,27 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJSON(w, jsonError{err.Error()})
+		writeJSON(w, http.StatusBadRequest, jsonError{err.Error()})
 		return
 	}
 
 	if task.Title == "" {
-		writeJSON(w, jsonError{"title is required"})
+		writeJSON(w, http.StatusBadRequest, jsonError{"title is required"})
 		return
 	}
 
 	if err := checkDate(&task); err != nil {
-		writeJSON(w, jsonError{err.Error()})
+		writeJSON(w, http.StatusBadRequest, jsonError{err.Error()})
 		return
 	}
 
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeJSON(w, jsonError{err.Error()})
+		writeJSON(w, http.StatusInternalServerError, jsonError{err.Error()})
 		return
 	}
 
-	writeJSON(w, jsonID{strconv.FormatInt(id, 10)})
+	writeJSON(w, http.StatusCreated, jsonID{strconv.FormatInt(id, 10)})
 }
 
 func checkDate(task *db.Task) error {
